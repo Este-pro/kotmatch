@@ -812,10 +812,11 @@
 
 <script>
   const { createClient } = supabase;
-  const sb = createClient(
-    'https://ufuftrmtrcukogyxnutv.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdWZ0cm10cmN1a29neXhudXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTIyNjgsImV4cCI6MjA5NTgyODI2OH0.F1o6Nnhj5TosixVrRVJAY6ze_vvsmIFG5Jfr6hIQVIM'
-  );
+  const SUPABASE_URL = 'https://ufuftrmtrcukogyxnutv.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdWZ0cm10cmN1a29neXhudXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTIyNjgsImV4cCI6MjA5NTgyODI2OH0.F1o6Nnhj5TosixVrRVJAY6ze_vvsmIFG5Jfr6hIQVIM';
+  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdWZ0cm10cmN1a29neXhudXR2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDI1MjI2OCwiZXhwIjoyMDk1ODI4MjY4fQ.xgxpyYjT9GUNZh5HWZknJrTx7NoOLWeonO1a7Rm78fI';
+  const sb = createClient(SUPABASE_URL, ANON_KEY);
+  const sbAdmin = createClient(SUPABASE_URL, SERVICE_KEY);
 
   let currentUser = null;
   let currentRole = null; // 'etudiant' | 'proprietaire'
@@ -1122,7 +1123,7 @@
       const ext = file.name.split('.').pop().toLowerCase();
       const path = 'logement-' + logementId + '-' + Date.now() + '.' + ext;
       console.log('Uploading:', path, 'Size:', file.size);
-      const { data, error } = await sb.storage.from('photos').upload(path, file, { 
+      const { data, error } = await sbAdmin.storage.from('photos').upload(path, file, { 
         upsert: true,
         contentType: file.type
       });
@@ -1131,7 +1132,7 @@
         alert('Erreur upload photo: ' + (error.message || JSON.stringify(error)));
       } else {
         console.log('Upload success:', data);
-        const { data: urlData } = sb.storage.from('photos').getPublicUrl(path);
+        const { data: urlData } = sbAdmin.storage.from('photos').getPublicUrl(path);
         console.log('Public URL:', urlData.publicUrl);
         urls.push(urlData.publicUrl);
       }
