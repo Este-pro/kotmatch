@@ -1119,11 +1119,20 @@
     if (!selectedPhotos.length) return [];
     const urls = [];
     for (const file of selectedPhotos) {
-      const ext = file.name.split('.').pop();
-      const path = logementId + '/' + Date.now() + '.' + ext;
-      const { data, error } = await sb.storage.from('photos').upload(path, file, { upsert: true });
-      if (!error) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const path = 'logement-' + logementId + '-' + Date.now() + '.' + ext;
+      console.log('Uploading:', path, 'Size:', file.size);
+      const { data, error } = await sb.storage.from('photos').upload(path, file, { 
+        upsert: true,
+        contentType: file.type
+      });
+      if (error) {
+        console.error('Upload error:', JSON.stringify(error));
+        alert('Erreur upload photo: ' + (error.message || JSON.stringify(error)));
+      } else {
+        console.log('Upload success:', data);
         const { data: urlData } = sb.storage.from('photos').getPublicUrl(path);
+        console.log('Public URL:', urlData.publicUrl);
         urls.push(urlData.publicUrl);
       }
     }
