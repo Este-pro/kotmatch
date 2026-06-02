@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KotMatch — Ton kot idéal, en quelques clics.</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #05091a;
+      --surface: #0a0f20;
+      --card: #0d1426;
+      --accent: #3b7bff;
+      --accent-light: rgba(59,123,255,0.08);
+      --red: #e5484d;
+      --green: #30a46c;
+      --text: #e2e8f0;
+      --text2: #94a3b8;
+      --muted: #475569;
+      --border: rgba(255,255,255,0.06);
+      --radius: 10px;
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --card: #ffffff;
+      --accent: #2563eb;
+      --accent-light: rgba(37,99,235,0.07);
+      --red: #dc2626;
+      --green: #16a34a;
+      --text: #0f172a;
+      --text2: #475569;
+      --muted: #94a3b8;
+      --border: rgba(0,0,0,0.08);
+      --radius: 10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: block; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 8%;
+      background: rgba(2,8,18,0.92);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 40px rgba(0,0,0,0.3);
+    }
+    .logo { font-weight: 700; font-size: 1.2rem; letter-spacing: -0.02em; cursor: pointer; color: var(--text); }
+    .logo span { color: var(--accent); }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 7px 16px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+    .nav-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .nav-btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .nav-btn-accent:hover { background: #3558e8; color: #fff; }
+    .nav-user { font-size: 0.8rem; color: var(--muted); }
+    .nav-user strong { color: var(--text); }
+
+    /* ── LANDING ── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center; padding: 120px 8% 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 900px; height: 900px;
+      background: radial-gradient(ellipse, rgba(240,192,64,0.1) 0%, transparent 70%); pointer-events: none;
+    }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-light); border: 1px solid rgba(79,124,255,0.3); color: var(--accent); padding: 7px 16px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 28px; animation: fadeDown 0.6s ease both; }
+    .hero h1 { font-weight: 700; font-size: clamp(2rem, 4.5vw, 3.6rem); line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 20px; animation: fadeDown 0.5s 0.08s ease both; color: var(--text); }
+    .hero h1 em { font-style: italic; color: var(--accent); text-shadow: 0 0 40px rgba(59,130,246,0.18); }
+    .hero p { font-size: clamp(0.95rem, 2vw, 1.15rem); color: var(--muted); max-width: 520px; margin-bottom: 40px; animation: fadeDown 0.6s 0.2s ease both; font-weight: 300; }
+    .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; animation: fadeDown 0.6s 0.3s ease both; }
+    .btn-primary { background: var(--accent); color: #fff; padding: 14px 32px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; border: none; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; box-shadow: 0 4px 24px rgba(59,130,246,0.18); letter-spacing: 0.01em; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: transparent; color: var(--text); padding: 12px 28px; border-radius: 8px; font-weight: 500; font-size: 0.875rem; border: 1px solid var(--border); cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; }
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); }
+    .hero-stats { display: flex; gap: 48px; margin-top: 72px; animation: fadeDown 0.6s 0.4s ease both; flex-wrap: wrap; justify-content: center; }
+    .stat { text-align: center; }
+    .stat-num { font-family: 'Inter', sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* HOW IT WORKS */
+    .section { padding: 88px 8%; }
+    .section-tag { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .section-title { font-weight: 600; font-size: clamp(1.4rem, 2.5vw, 1.9rem); letter-spacing: -0.02em; margin-bottom: 10px; color: var(--text); }
+    .section-sub { color: var(--text2); font-size: 0.9rem; max-width: 460px; margin-bottom: 40px; line-height: 1.7; }
+    .how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+    .how-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 24px; transition: border-color 0.15s;
+    }
+    .how-card:hover { border-color: rgba(59,123,255,0.3); }
+    .how-num { font-size: 0.72rem; font-weight: 600; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 14px; }
+    .how-icon { display: none; }
+    .how-card h3 { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; color: var(--text); }
+    .how-card p { color: var(--text2); font-size: 0.85rem; line-height: 1.65; }
+    .audience { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .audience-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .audience-card { background: var(--card); border-radius: var(--radius); padding: 36px 28px; border: 1px solid var(--border); transition: border-color 0.15s; }
+    .audience-card:hover { border-color: rgba(59,123,255,0.3); }
+    .audience-emoji { display: none; }
+    .audience-card h3 { font-weight: 600; font-size: 1rem; margin-bottom: 8px; color: var(--text); }
+    .audience-card p { color: var(--text2); margin-bottom: 20px; font-size: 0.875rem; line-height: 1.7; }
+    .audience-btn { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 7px; font-weight: 500; font-size: 0.85rem; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.15s; }
+    .audience-btn:hover { background: #3558e8; }
+    footer { padding: 40px 8%; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--surface); }
+    footer .logo { font-size: 1rem; cursor: pointer; }
+    footer p { color: var(--muted); font-size: 0.8rem; }
+
+    /* ── AUTH MODAL ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .auth-modal { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 36px 32px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+    [data-theme="light"] .auth-modal { background: #ffffff; box-shadow: 0 24px 80px rgba(0,0,0,0.15); }
+    .auth-modal-logo { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+    .auth-modal-logo span { color: var(--accent); }
+    .auth-modal-tag { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 24px; }
+    .auth-tabs { display: flex; background: var(--surface); border-radius: 50px; padding: 4px; margin-bottom: 24px; }
+    .auth-tab { flex: 1; padding: 9px; border-radius: 50px; border: none; background: transparent; color: var(--muted); font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+    .auth-tab.active { background: var(--accent); color: #000; }
+    .auth-form { display: none; }
+    .auth-form.active { display: block; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input, .form-group select {
+      width: 100%; background: #1a1e28; border: 1px solid var(--border); border-radius: 10px;
+      padding: 11px 14px; color: var(--text); font-size: 0.875rem; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    [data-theme="light"] .form-group input,
+    [data-theme="light"] .form-group select {
+      background: #f1f5ff;
+      color: #0f172a;
+      border-color: rgba(37,99,235,0.2);
+    }
+    [data-theme="light"] .form-group input::placeholder { color: #94a3b8; }
+    [data-theme="light"] .form-group input:focus,
+    [data-theme="light"] .form-group select:focus { border-color: var(--accent); background: #ffffff; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-group input:-webkit-autofill { -webkit-box-shadow: 0 0 0px 1000px #1a1e28 inset !important; -webkit-text-fill-color: #f0ede6 !important; }
+    .form-group select option { background: #1a1e28; }
+    .auth-submit { width: 100%; background: var(--accent); color: #fff; border: none; padding: 13px; border-radius: 50px; font-weight: 700; font-size: 0.9rem; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; margin-top: 4px; }
+    .auth-submit:hover { background: #3558e8; }
+    .auth-error { color: var(--red); font-size: 0.8rem; margin-top: 8px; display: none; text-align: center; }
+    .auth-success { color: var(--green); font-size: 0.8rem; margin-top: 8px; display: none; text-align: center; }
+    .auth-close { float: right; background: transparent; border: none; color: var(--muted); font-size: 1.4rem; cursor: pointer; line-height: 1; }
+
+    /* ── DASHBOARD ── */
+    .dash-nav { background: rgba(2,8,18,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 14px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 30px rgba(0,0,0,0.2); }
+    .dash-logo { font-size: 1.1rem; font-weight: 700; cursor: pointer; letter-spacing: -0.01em; }
+    .dash-logo span { color: var(--accent); }
+    .dash-right { display: flex; align-items: center; gap: 14px; }
+    .dash-user { font-size: 0.82rem; color: var(--muted); }
+    .dash-user strong { color: var(--text); }
+    .dash-role { font-size: 0.7rem; background: rgba(240,192,64,0.12); color: var(--accent); padding: 3px 10px; border-radius: 50px; font-weight: 600; }
+    .logout-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 50px; font-size: 0.78rem; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+    .dash-main { padding: 36px 40px; max-width: 1200px; margin: 0 auto; }
+    .dash-tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+    .dash-tab { padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-weight: 500; font-size: 0.82rem; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+    .dash-tab:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
+    .dash-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .dash-page { display: none; }
+    .dash-page.active { display: block; }
+
+    /* STUDENT SEARCH */
+    .filters-bar { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end; }
+    .filter-group label { display: block; font-size: 0.7rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .filter-group select, .filter-group input { width: 100%; background: #1a1e28; border: 1px solid var(--border); border-radius: 8px; padding: 8px 11px; color: var(--text); font-size: 0.85rem; font-family: 'Inter', sans-serif; outline: none; -webkit-appearance: none; }
+    .filter-group select:focus, .filter-group input:focus { border-color: var(--accent); }
+    .filter-group select option { background: #1a1e28; }
+    .filter-apply { background: var(--accent); color: #fff; border: none; padding: 9px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: 'Inter', sans-serif; width: 100%; }
+    .results-count { font-size: 0.875rem; color: var(--muted); margin-bottom: 16px; }
+    .results-count strong { color: var(--text); }
+    .logements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+    .log-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s; cursor: pointer; }
+    .log-card:hover { border-color: rgba(59,123,255,0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+    .log-photo { height: 140px; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; position: relative; border-bottom: 1px solid var(--border); color: var(--muted); }
+    .log-ville { position: absolute; top: 10px; left: 10px; background: rgba(13,15,20,0.85); color: #ffffff; padding: 3px 9px; border-radius: 50px; font-size: 0.7rem; font-weight: 600; }
+    [data-theme="light"] .log-ville { background: rgba(37,99,235,0.85); color: #ffffff; }
+    .log-body { padding: 16px; }
+    .log-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .log-title { font-weight: 600; font-size: 0.9rem; line-height: 1.4; color: var(--text); }
+    .log-price { font-weight: 700; font-size: 0.95rem; color: var(--accent); white-space: nowrap; margin-left: 10px; }
+    .log-detail { font-size: 0.78rem; color: var(--text2); margin-bottom: 3px; }
+    .log-desc { font-size: 0.78rem; color: var(--muted); margin-top: 8px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .log-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+    .contact-btn { flex: 1; background: var(--accent); color: #fff; border: none; padding: 9px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .contact-btn:hover { background: #3558e8; }
+    .fav-btn { background: var(--accent-light); color: var(--accent); border: 1px solid rgba(79,124,255,0.2); padding: 9px 12px; border-radius: 8px; font-size: 0.82rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+
+    /* OWNER DASHBOARD */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat-card { background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: all 0.2s; } .stat-card:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(59,130,246,0.18); }
+    .stat-card-num { font-size: 1.6rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .stat-card-label { font-size: 0.72rem; color: var(--text2); margin-top: 4px; }
+    .biens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .bien-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: border-color 0.15s; }
+    .bien-card:hover { border-color: rgba(240,192,64,0.2); }
+    .bien-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .bien-title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.95rem; }
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 50px; font-size: 0.68rem; font-weight: 600; }
+    .badge-wait { background: rgba(240,192,64,0.15); color: var(--accent); }
+    .badge-online { background: rgba(79,255,159,0.12); color: var(--green); }
+    .badge-rented { background: rgba(79,142,255,0.15); color: var(--accent2); }
+    .bien-detail { font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+    .bien-detail strong { color: var(--text); }
+    .add-card { background: transparent; border: 2px dashed var(--border); border-radius: var(--radius); padding: 36px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: var(--muted); font-size: 0.875rem; gap: 8px; }
+    .add-card:hover { border-color: var(--accent); color: var(--accent); }
+    .form-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; max-width: 600px; }
+    .form-card h2 { font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-section-title { font-size: 0.7rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin: 16px 0 10px; }
+    .form-group textarea { width: 100%; background: #1a1e28; border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: var(--text); font-size: 0.875rem; font-family: 'Inter', sans-serif; outline: none; resize: vertical; min-height: 80px; }
+    .form-group textarea:focus { border-color: var(--accent); }
+    .commission-note { background: var(--accent-light); border: 1px solid rgba(79,124,255,0.2); border-radius: 10px; padding: 12px 16px; font-size: 0.8rem; color: var(--muted); margin-top: 14px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .cancel-btn { flex: 1; background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 12px; border-radius: 50px; font-weight: 600; font-size: 0.875rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .submit-btn { flex: 2; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 50px; font-weight: 700; font-size: 0.875rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .submit-btn:hover { background: #3558e8; }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-success { display: none; background: rgba(79,255,159,0.08); border: 1px solid rgba(79,255,159,0.2); border-radius: 10px; padding: 14px; color: var(--green); font-size: 0.875rem; margin-top: 12px; text-align: center; }
+
+    /* CONTACT MODAL */
+    .contact-modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+    .contact-modal-header { padding: 22px 26px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+    .contact-modal-title { font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 800; }
+    .modal-close { background: transparent; border: none; color: var(--muted); font-size: 1.4rem; cursor: pointer; }
+    .contact-modal-body { padding: 18px 26px 26px; }
+    .modal-price { font-family: 'Inter', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--accent); margin-bottom: 16px; }
+    .modal-field { margin-bottom: 12px; }
+    .modal-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; font-weight: 600; }
+    .modal-value { font-size: 0.875rem; line-height: 1.6; }
+    .contact-section { margin-top: 20px; background: var(--accent-light); border: 1px solid rgba(79,124,255,0.2); border-radius: 12px; padding: 18px; }
+    .contact-section h4 { font-family: 'Inter', sans-serif; font-weight: 700; margin-bottom: 10px; color: var(--accent); font-size: 0.95rem; }
+    .contact-section textarea { width: 100%; background: #1a1e28; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 0.875rem; font-family: 'Inter', sans-serif; outline: none; resize: vertical; min-height: 72px; margin-bottom: 10px; }
+    .send-btn { width: 100%; background: var(--accent); color: #fff; border: none; padding: 11px; border-radius: 50px; font-weight: 700; font-size: 0.875rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .send-btn:hover { background: #3558e8; }
+    .send-success { display: none; color: var(--green); font-size: 0.82rem; text-align: center; margin-top: 8px; }
+
+    /* PROFILE */
+    .profile-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; max-width: 440px; }
+    .profile-card h2 { font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; }
+    .profile-field { margin-bottom: 12px; }
+    .profile-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .profile-value { font-size: 0.9rem; }
+
+    /* EMPTY & UTILS */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .empty-text { font-size: 0.95rem; color: var(--text); margin-bottom: 6px; }
+    .empty-sub { font-size: 0.82rem; }
+
+    /* FAVORIS */
+    .favs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .fav-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+    .fav-title { font-family: 'Inter', sans-serif; font-weight: 700; margin-bottom: 6px; font-size: 0.95rem; }
+    .fav-detail { font-size: 0.78rem; color: var(--muted); margin-bottom: 3px; }
+    .fav-price { font-family: 'Inter', sans-serif; font-weight: 800; color: var(--accent); font-size: 1rem; margin-top: 8px; }
+    .remove-fav { background: rgba(255,79,79,0.1); color: var(--red); border: none; padding: 5px 11px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 10px; }
+
+
+
+    /* ── LANG SWITCHER ── */
+    .lang-switcher {
+      display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 50px; padding: 3px; gap: 2px;
+    }
+    .lang-btn {
+      background: transparent; border: none; color: var(--muted);
+      padding: 5px 10px; border-radius: 50px; font-size: 0.72rem;
+      font-weight: 700; cursor: pointer; transition: all 0.2s;
+      font-family: 'Inter', sans-serif; letter-spacing: 0.05em;
+    }
+    .lang-btn:hover { color: var(--text); }
+    .lang-btn.active { background: var(--accent); color: #fff; }
+
+
+    /* ── PREMIUM ── */
+    .premium-banner {
+      background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(6,182,212,0.08) 100%);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: var(--radius); padding: 18px 22px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; margin-bottom: 24px;
+    }
+    .premium-left { display: flex; align-items: center; gap: 14px; }
+    .premium-icon { font-size: 1.8rem; }
+    .premium-title { font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 400; margin-bottom: 4px; }
+    .premium-sub { font-size: 0.78rem; color: var(--muted); }
+    .premium-btn {
+      background: var(--accent); color: #fff; border: none;
+      padding: 10px 20px; border-radius: 50px; font-weight: 700;
+      font-size: 0.82rem; cursor: pointer; font-family: 'Inter', sans-serif;
+      white-space: nowrap; transition: all 0.2s;
+    }
+    .premium-btn:hover { background: #3b8fff; transform: translateY(-1px); }
+    .premium-feature {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; font-size: 0.875rem;
+    }
+    [data-theme="light"] .premium-banner { background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(6,182,212,0.05) 100%); }
+    [data-theme="light"] .premium-feature { background: #f8faff; }
+
+
+    /* ── ROLE SELECTION ── */
+    .role-btn {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px; cursor: pointer;
+      transition: border-color 0.15s; text-align: left; font-family: 'Inter', sans-serif;
+    }
+    .role-btn:hover { border-color: var(--accent); }
+    .role-btn-title { font-weight: 600; font-size: 0.9rem; color: var(--text); margin-bottom: 2px; }
+    .role-btn-sub { font-size: 0.78rem; color: var(--text2); }
+    [data-theme="light"] .role-btn { background: #f8fafc; }
+
+    /* ── THEME TOGGLE ── */
+    .theme-toggle {
+      background: var(--surface); border: 1px solid var(--border);
+      width: 36px; height: 36px; border-radius: 50%; font-size: 1rem;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .theme-toggle:hover { border-color: var(--accent); transform: rotate(20deg); }
+
+    /* ── LIGHT MODE OVERRIDES ── */
+    [data-theme="light"] nav { background: rgba(240,244,255,0.92); }
+    [data-theme="light"] .hero::before { background: radial-gradient(ellipse, rgba(59,99,247,0.08) 0%, transparent 70%); }
+    [data-theme="light"] .how-card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    [data-theme="light"] .how-card:hover { box-shadow: 0 8px 28px rgba(59,99,247,0.12); }
+    [data-theme="light"] .audience { background: #eef1f9; }
+    [data-theme="light"] .audience-card { background: #ffffff; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    [data-theme="light"] .auth-modal { box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+    [data-theme="light"] .stat-card { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    [data-theme="light"] .log-card { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    [data-theme="light"] .form-card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    [data-theme="light"] footer { background: #ffffff; }
+
+
+    /* ── LIGHT MODE GLOBAL FIXES ── */
+    [data-theme="light"] body {
+      background-image: radial-gradient(ellipse at 20% 0%, rgba(37,99,235,0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 100%, rgba(5,150,105,0.04) 0%, transparent 60%);
+    }
+    [data-theme="light"] .filters-bar,
+    [data-theme="light"] .form-card,
+    [data-theme="light"] .stat-card,
+    [data-theme="light"] .log-card,
+    [data-theme="light"] .bien-card,
+    [data-theme="light"] .how-card,
+    [data-theme="light"] .audience-card,
+    [data-theme="light"] .profile-card,
+    [data-theme="light"] .contact-modal,
+    [data-theme="light"] .auth-tabs,
+    [data-theme="light"] .dash-tabs .dash-tab {
+      background: #ffffff;
+      border-color: rgba(37,99,235,0.12);
+      color: #0f172a;
+    }
+    [data-theme="light"] .filter-group select,
+    [data-theme="light"] .filter-group input,
+    [data-theme="light"] .form-group input,
+    [data-theme="light"] .form-group select,
+    [data-theme="light"] .form-group textarea,
+    [data-theme="light"] .contact-section textarea,
+    [data-theme="light"] .prop-tel-input {
+      background: #f1f5ff !important;
+      color: #0f172a !important;
+      border-color: rgba(37,99,235,0.2) !important;
+    }
+    [data-theme="light"] .filter-group select:focus,
+    [data-theme="light"] .filter-group input:focus,
+    [data-theme="light"] .form-group input:focus,
+    [data-theme="light"] .form-group select:focus,
+    [data-theme="light"] .form-group textarea:focus {
+      background: #ffffff !important;
+      border-color: var(--accent) !important;
+    }
+    [data-theme="light"] input::placeholder,
+    [data-theme="light"] textarea::placeholder { color: #94a3b8 !important; }
+    [data-theme="light"] .log-photo { background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%) !important; }
+    [data-theme="light"] .section-title,
+    [data-theme="light"] .how-card h3,
+    [data-theme="light"] .audience-card h3,
+    [data-theme="light"] .bien-title,
+    [data-theme="light"] .log-title,
+    [data-theme="light"] .modal-price,
+    [data-theme="light"] .contact-modal-title { color: #0f172a !important; }
+    [data-theme="light"] .muted,
+    [data-theme="light"] .log-detail,
+    [data-theme="light"] .bien-detail,
+    [data-theme="light"] .log-desc,
+    [data-theme="light"] .section-sub { color: #64748b !important; }
+    [data-theme="light"] .dash-nav { background: rgba(240,244,255,0.95) !important; }
+    [data-theme="light"] .dash-tab { color: #64748b; border-color: rgba(37,99,235,0.15); }
+    [data-theme="light"] .dash-tab:hover { color: #0f172a; }
+    [data-theme="light"] .dash-tab.active { color: #fff; }
+    [data-theme="light"] .auth-tab { color: #64748b; }
+    [data-theme="light"] .auth-tab.active { color: #fff; }
+    [data-theme="light"] footer { background: #ffffff; }
+    [data-theme="light"] .audience { background: #eef2ff; }
+    [data-theme="light"] .add-card { border-color: rgba(37,99,235,0.2); color: #64748b; }
+    [data-theme="light"] .add-card:hover { border-color: var(--accent); color: var(--accent); }
+    [data-theme="light"] .commission-note { background: rgba(37,99,235,0.06); border-color: rgba(37,99,235,0.2); }
+    [data-theme="light"] .contact-section { background: rgba(37,99,235,0.05); border-color: rgba(37,99,235,0.15); }
+    [data-theme="light"] .lang-switcher { background: #ffffff; border-color: rgba(37,99,235,0.2); }
+    [data-theme="light"] .lang-btn { color: #64748b; }
+    [data-theme="light"] .lang-btn.active { color: #fff; }
+    [data-theme="light"] .theme-toggle { background: #ffffff; border-color: rgba(37,99,235,0.2); }
+    [data-theme="light"] .nav-btn { color: #475569; border-color: rgba(37,99,235,0.2); }
+    [data-theme="light"] .logout-btn { color: #64748b; border-color: rgba(0,0,0,0.1); }
+    [data-theme="light"] .logout-btn:hover { color: var(--red); border-color: var(--red); }
+    [data-theme="light"] .dash-user { color: #64748b; }
+    [data-theme="light"] .dash-user strong { color: #0f172a; }
+    [data-theme="light"] .results-count { color: #64748b; }
+    [data-theme="light"] .results-count strong { color: #0f172a; }
+    [data-theme="light"] .profile-label { color: #64748b; }
+    [data-theme="light"] .profile-value { color: #0f172a; }
+    [data-theme="light"] .modal-label { color: #64748b; }
+    [data-theme="light"] .modal-value { color: #0f172a; }
+    [data-theme="light"] .form-section-title { color: var(--accent); }
+    [data-theme="light"] .send-success { color: #059669; }
+
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.55s ease, transform 0.55s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 768px) {
+      nav { padding: 12px 3%; gap: 6px; }
+      .logo { font-size: 1.1rem; }
+      .lang-switcher { gap: 1px; }
+      .lang-btn { padding: 4px 7px; font-size: 0.65rem; }
+      .theme-toggle { width: 30px; height: 30px; font-size: 0.85rem; }
+      .nav-btn { padding: 6px 10px; font-size: 0.75rem; }
+      .hero h1 { font-size: 2.2rem; }
+      .hero-btns { flex-direction: column; align-items: stretch; }
+      .btn-primary, .btn-secondary { text-align: center; }
+      .audience-grid { grid-template-columns: 1fr; }
+      .dash-main { padding: 20px 14px; }
+      .dash-nav { padding: 13px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .filters-bar { grid-template-columns: 1fr 1fr; }
+      .logements-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) { .filters-bar { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 : LANDING
+══════════════════════════════════════════ -->
+<div class="screen active" id="screen-landing">
+  <nav>
+    <div class="logo" onclick="goHome()">Kot<span>Match</span></div>
+    <div class="nav-right">
+      <div class="lang-switcher">
+        <button class="lang-btn active" id="lb-fr" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" id="lb-en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="lb-nl" onclick="setLang('nl')">NL</button>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Changer le thème" id="theme-btn">🌙</button>
+      <button class="nav-btn" id="nav-login-btn" onclick="openRoleSelect('login')">Se connecter</button>
+      <button class="nav-btn nav-btn-accent" id="nav-signup-btn" onclick="openRoleSelect('signup')">S'inscrire</button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-badge">Belgique · Erasmus</div>
+    <h1>Trouve ton <em>kot idéal</em><br/>en quelques clics.</h1>
+    <p>KotMatch connecte les étudiants Erasmus avec des propriétaires belges de confiance. Simple, rapide et sécurisé.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="openAuth('etudiant','signup')">🎓 Je cherche un kot</button>
+      <button class="btn-secondary" onclick="openAuth('proprietaire','signup')">🏠 Je propose un logement</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">5</div><div class="stat-label">Villes</div></div>
+      <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Vérifié</div></div>
+      <div class="stat"><div class="stat-num">8%</div><div class="stat-label">Commission</div></div>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <div class="section-tag">Comment ça marche</div>
+    <h2 class="section-title">Simple comme bonjour.</h2>
+    <p class="section-sub">Trouver un logement pour ton Erasmus ne devrait pas être un calvaire.</p>
+    <div class="how-grid">
+      <div class="how-card reveal"><div class="how-num">01</div><div class="how-icon">📝</div><h3>Crée ton profil</h3><p>Dis-nous ta ville, tes dates et ton budget. 2 minutes chrono.</p></div>
+      <div class="how-card reveal"><div class="how-num">02</div><div class="how-icon">🔍</div><h3>Explore les kots</h3><p>Parcours les logements disponibles avec filtres personnalisés.</p></div>
+      <div class="how-card reveal"><div class="how-num">03</div><div class="how-icon">💬</div><h3>Contacte le proprio</h3><p>Échange directement via la plateforme, en toute sécurité.</p></div>
+      <div class="how-card reveal"><div class="how-num">04</div><div class="how-icon">✅</div><h3>Signe & installe-toi</h3><p>Contrat sécurisé. Tu arrives en Belgique avec ton kot déjà prêt.</p></div>
+    </div>
+  </section>
+
+  <section class="section audience">
+    <div class="section-tag">Pour qui ?</div>
+    <h2 class="section-title">Fait pour vous deux.</h2>
+    <p class="section-sub">Étudiants ou propriétaires, KotMatch vous simplifie la vie.</p>
+    <div class="audience-grid">
+      <div class="audience-card reveal">
+        <div class="audience-emoji">🎓</div>
+        <h3>Étudiants Erasmus</h3>
+        <p>Tu arrives en Belgique et tu veux trouver un logement rapidement, sans galère et à prix raisonnable.</p>
+        <button class="audience-btn" onclick="openRoleSelect('signup')">Trouver un kot →</button>
+      </div>
+      <div class="audience-card reveal">
+        <div class="audience-emoji">🏠</div>
+        <h3>Propriétaires</h3>
+        <p>Tu as une chambre libre et tu veux la louer à des étudiants sérieux, avec contrat et paiement sécurisé.</p>
+        <button class="audience-btn" onclick="openRoleSelect('signup')">Proposer mon bien →</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="logo" onclick="goHome()">Kot<span>Match</span></div>
+    <p>© 2025 KotMatch · Belgique · contact@kotmatch.be</p>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 : DASHBOARD ÉTUDIANT
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-etudiant">
+  <div class="dash-nav">
+    <div class="dash-logo" onclick="goHome()">Kot<span>Match</span></div>
+    <div class="dash-right">
+      <div class="lang-switcher">
+        <button class="lang-btn active" id="lb2-fr" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" id="lb2-en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="lb2-nl" onclick="setLang('nl')">NL</button>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn-etu">🌙</button>
+      <span class="dash-role">🎓 Étudiant</span>
+      <span class="dash-user">Bonjour, <strong id="etu-name">—</strong></span>
+      <button class="logout-btn" id="logout-btn-etu" onclick="doLogout()">Déconnexion</button>
+    </div>
+  </div>
+  <div class="dash-main">
+    <div class="dash-tabs">
+      <button class="dash-tab active" id="etab-search" onclick="showEtuTab('search',this)">🔍 Rechercher</button>
+      <button class="dash-tab" id="etab-favoris" onclick="showEtuTab('favoris',this)">❤️ Favoris <span id="fav-count"></span></button>
+      <button class="dash-tab" id="etab-profil" onclick="showEtuTab('profil-etu',this)">👤 Mon profil</button>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="dash-page active" id="epage-search">
+      <div class="filters-bar">
+        <div class="filter-group"><label>Ville</label>
+          <select id="f-ville"><option value="">Toutes</option><option>Bruxelles</option><option>Gand</option><option>Louvain</option><option>Liège</option><option>Anvers</option></select>
+        </div>
+        <div class="filter-group"><label>Budget max (€)</label><input type="number" id="f-budget" placeholder="700"/></div>
+        <div class="filter-group"><label>Trier par</label>
+          <select id="f-sort"><option value="recent">Plus récent</option><option value="asc">Prix ↑</option><option value="desc">Prix ↓</option></select>
+        </div>
+        <div class="filter-group"><button class="filter-apply" onclick="applyFilters()">🔍 Filtrer</button></div>
+        <div class="filter-group"><button class="filter-apply" style="background:var(--surface);color:var(--muted);border:1px solid var(--border)" onclick="resetFilters()">↺ Reset</button></div>
+      </div>
+      <div class="results-count" id="results-count">Chargement...</div>
+      <div class="logements-grid" id="logements-grid"><div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⏳</div><div class="empty-text">Chargement...</div></div></div>
+    </div>
+
+    <!-- FAVORIS -->
+    <div class="dash-page" id="epage-favoris">
+      <div id="favoris-container"><div class="empty-state"><div class="empty-icon">❤️</div><div class="empty-text">Aucun favori</div><div class="empty-sub">Sauvegarde les logements qui t'intéressent.</div></div></div>
+    </div>
+
+    <!-- PROFIL ETU -->
+    <div class="dash-page" id="epage-profil-etu">
+      <div class="profile-card">
+        <h2>👤 Mon profil</h2>
+        <div class="profile-field"><div class="profile-label">Prénom</div><div class="profile-value" id="etu-profile-prenom">—</div></div>
+        <div class="profile-field"><div class="profile-label">Email</div><div class="profile-value" id="etu-profile-email">—</div></div>
+        <div class="profile-field"><div class="profile-label">Université</div><div class="profile-value" id="etu-profile-univ">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 : DASHBOARD PROPRIÉTAIRE
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-proprietaire">
+  <div class="dash-nav">
+    <div class="dash-logo" onclick="goHome()">Kot<span>Match</span></div>
+    <div class="dash-right">
+      <div class="lang-switcher">
+        <button class="lang-btn active" id="lb3-fr" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" id="lb3-en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="lb3-nl" onclick="setLang('nl')">NL</button>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn-prop">🌙</button>
+      <span class="dash-role">🏠 Propriétaire</span>
+      <span class="dash-user">Bonjour, <strong id="proprio-name">—</strong></span>
+      <button class="logout-btn" id="logout-btn-prop" onclick="doLogout()">Déconnexion</button>
+    </div>
+  </div>
+  <div class="dash-main">
+    <div class="dash-tabs">
+      <button class="dash-tab active" id="ptab-biens" onclick="showPropTab('biens',this)">🏠 Mes biens</button>
+      <button class="dash-tab" id="ptab-ajouter" onclick="showPropTab('ajouter',this)">➕ Ajouter</button>
+      <button class="dash-tab" id="ptab-profil" onclick="showPropTab('profil-prop',this)">👤 Mon profil</button>
+    </div>
+
+    <!-- BIENS -->
+    <div class="dash-page active" id="ppage-biens">
+      <div class="premium-banner" id="premium-banner">
+        <div class="premium-left">
+          <div class="premium-icon">⭐</div>
+          <div>
+            <div class="premium-title">Passez en Premium — 19€/mois</div>
+            <div class="premium-sub">Annonce en avant · Badge vérifié · Stats · 10 photos · Support prioritaire</div>
+          </div>
+        </div>
+        <button class="premium-btn" onclick="openPremiumModal()">Activer Premium →</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-card-num" id="p-total">0</div><div class="stat-card-label">Biens soumis</div></div>
+        <div class="stat-card"><div class="stat-card-num" id="p-online" style="color:var(--green)">0</div><div class="stat-card-label">En ligne</div></div>
+        <div class="stat-card"><div class="stat-card-num" id="p-pending" style="color:var(--accent)">0</div><div class="stat-card-label">En attente</div></div>
+        <div class="stat-card"><div class="stat-card-num" id="p-revenue">0€</div><div class="stat-card-label">Revenus nets/mois</div></div>
+      </div>
+      <div id="biens-container"><div class="empty-state">Chargement...</div></div>
+    </div>
+
+    <!-- AJOUTER -->
+    <div class="dash-page" id="ppage-ajouter">
+      <div class="form-card">
+        <h2>➕ Ajouter un logement</h2>
+        <div class="form-section-title">Informations générales</div>
+        <div class="form-group"><label>Titre de l'annonce</label><input type="text" id="b-titre" placeholder="Chambre lumineuse proche ULB" style="width:100%;background:#1a1e28;border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:0.875rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;-webkit-appearance:none"/></div>
+        <div class="form-row">
+          <div class="form-group"><label>Ville</label>
+            <select id="b-ville"><option value="">-- Choisir --</option><option>Bruxelles</option><option>Gand</option><option>Louvain</option><option>Liège</option><option>Anvers</option></select>
+          </div>
+          <div class="form-group"><label>Prix (€/mois)</label><input type="number" id="b-prix" placeholder="600" style="width:100%;background:#1a1e28;border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:0.875rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;-webkit-appearance:none"/></div>
+        </div>
+        <div class="form-section-title">Durée & type</div>
+        <div class="form-row">
+          <div class="form-group"><label>Durée</label>
+            <select id="b-duree-type"><option value="determinee">Déterminée</option><option value="indeterminee">Indéterminée</option></select>
+          </div>
+          <div class="form-group"><label>Nb de mois</label><input type="number" id="b-duree" placeholder="4" style="width:100%;background:#1a1e28;border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:0.875rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;-webkit-appearance:none"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Disponible à partir du</label><input type="date" id="b-dispo" style="width:100%;background:#1a1e28;border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:0.875rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;-webkit-appearance:none"/></div>
+          <div class="form-group"><label>Type</label>
+            <select id="b-type"><option>Chambre privée</option><option>Studio</option><option>Appartement entier</option><option>Chambre en colocation</option></select>
+          </div>
+        </div>
+        <div class="form-section-title">Photos</div>
+        <div class="form-group">
+          <label>Photos du logement (max 5)</label>
+          <div id="photo-upload-area" onclick="document.getElementById('b-photos').click()" style="border:1px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;color:var(--text2)">
+            <div style="font-size:0.875rem;margin-bottom:4px">Cliquez pour ajouter des photos</div>
+            <div style="font-size:0.75rem;color:var(--muted)">JPG, PNG - Max 5 photos</div>
+          </div>
+          <input type="file" id="b-photos" accept="image/*" multiple style="display:none" onchange="previewPhotos(event)"/>
+          <div id="photo-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+        </div>
+        <div class="form-section-title">Description</div>
+        <div class="form-group"><label>Description</label><textarea id="b-desc" placeholder="Superficie, quartier, transports, équipements..."></textarea></div>
+        <div class="commission-note">💡 KotMatch prélève <strong style="color:var(--accent)">8%</strong> de commission. Pour 600€/mois → vous recevez <strong style="color:var(--accent)">552€</strong>.</div>
+        <div class="form-actions">
+          <button class="cancel-btn" onclick="showPropTab('biens',document.getElementById('ptab-biens'))">Annuler</button>
+          <button class="submit-btn" id="submit-bien-btn" onclick="submitBien()">Soumettre →</button>
+        </div>
+        <div class="form-success" id="bien-success">🎉 Annonce soumise ! Elle sera visible après validation.</div>
+      </div>
+    </div>
+
+    <!-- PROFIL PROP -->
+    <div class="dash-page" id="ppage-profil-prop">
+      <div class="profile-card">
+        <h2>👤 Mon profil</h2>
+        <div class="profile-field"><div class="profile-label">Prénom</div><div class="profile-value" id="prop-profile-prenom">—</div></div>
+        <div class="profile-field"><div class="profile-label">Email</div><div class="profile-value" id="prop-profile-email">—</div></div>
+        <div class="profile-field">
+          <div class="profile-label">Téléphone</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+            <input type="tel" id="prop-tel-input" placeholder="+32 470 00 00 00" style="flex:1;background:#1a1e28;border:1px solid var(--border);border-radius:10px;padding:9px 13px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.875rem;outline:none;-webkit-appearance:none"/>
+            <button onclick="saveTel()" style="background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:50px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap">Sauvegarder</button>
+          </div>
+          <div id="tel-success" style="display:none;color:#4fff9f;font-size:0.78rem;margin-top:5px">✅ Numéro sauvegardé !</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PREMIUM MODAL -->
+<div class="modal-overlay" id="premium-modal" onclick="closePremiumOnOverlay(event)">
+  <div class="contact-modal" style="max-width:480px">
+    <div class="contact-modal-header">
+      <div class="contact-modal-title">⭐ KotMatch Premium</div>
+      <button class="modal-close" onclick="closePremiumModal()">×</button>
+    </div>
+    <div class="contact-modal-body">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-family:'DM Serif Display',serif;font-size:2.5rem;font-weight:400;color:var(--accent)">19€<span style="font-size:1rem;font-weight:400;color:var(--muted)">/mois</span></div>
+        <div style="color:var(--muted);font-size:0.875rem;margin-top:4px">Sans engagement · Annulable à tout moment</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+        <div class="premium-feature">🥇 Annonce mise en avant en 1ère position</div>
+        <div class="premium-feature">✅ Badge "Vérifié Premium" sur vos annonces</div>
+        <div class="premium-feature">📊 Statistiques de vues et de contacts</div>
+        <div class="premium-feature">📸 Jusqu'à 10 photos par annonce</div>
+        <div class="premium-feature">⚡ Support prioritaire 7j/7</div>
+        <div class="premium-feature">🔔 Notifications instantanées des demandes</div>
+      </div>
+      <button class="send-btn" onclick="subscribePremium()">S'abonner maintenant →</button>
+      <div style="text-align:center;margin-top:12px;font-size:0.78rem;color:var(--muted)">Paiement sécurisé via Stripe · 19€/mois</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROLE SELECTION MODAL -->
+<div class="modal-overlay" id="role-modal" onclick="closeRoleOnOverlay(event)">
+  <div class="auth-modal" style="text-align:center">
+    <button class="auth-close" onclick="closeRoleModal()">×</button>
+    <div class="auth-modal-logo">Kot<span>Match</span></div>
+    <div class="auth-modal-tag" id="role-modal-tag" style="margin-bottom:20px">Sélectionnez votre profil</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="role-btn" onclick="selectRole('etudiant')">
+        <div class="role-btn-title" id="role-etu-title">Étudiant</div>
+        <div class="role-btn-sub" id="role-etu-sub">Je cherche un logement</div>
+      </button>
+      <button class="role-btn" onclick="selectRole('proprietaire')">
+        <div class="role-btn-title" id="role-prop-title">Propriétaire</div>
+        <div class="role-btn-sub" id="role-prop-sub">Je propose un logement</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     AUTH MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="auth-modal">
+    <button class="auth-close" onclick="closeAuthModal()">×</button>
+    <div class="auth-modal-logo">Kot<span>Match</span></div>
+    <div class="auth-modal-tag" id="auth-modal-tag">Espace Étudiant</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="atab-login" onclick="switchAuthTab('login')">Se connecter</button>
+      <button class="auth-tab" id="atab-signup" onclick="switchAuthTab('signup')">Créer un compte</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="auth-form active" id="aform-login">
+      <div class="form-group"><label>Email</label><input type="email" id="a-login-email" placeholder="votre@email.com"/></div>
+      <div class="form-group"><label>Mot de passe</label><input type="password" id="a-login-pwd" placeholder="••••••••"/></div>
+      <button class="auth-submit" id="a-login-btn" onclick="doLogin()">Se connecter →</button>
+      <div class="auth-error" id="a-login-error">Email ou mot de passe incorrect.</div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div class="auth-form" id="aform-signup">
+      <div class="form-group"><label>Prénom</label><input type="text" id="a-signup-prenom" placeholder="Lucas"/></div>
+      <div class="form-group"><label>Email</label><input type="email" id="a-signup-email" placeholder="lucas@univ.be"/></div>
+      <div class="form-group"><label>Mot de passe (min. 6 caractères)</label><input type="password" id="a-signup-pwd" placeholder="••••••••"/></div>
+      <div class="form-group" id="univ-field">
+        <label>Université</label>
+        <select id="a-signup-univ"><option value="">-- Choisir --</option><option>ULB</option><option>UCLouvain</option><option>UGent</option><option>KULeuven</option><option>ULiège</option><option>Autre</option></select>
+      </div>
+      <button class="auth-submit" id="a-signup-btn" onclick="doSignup()">Créer mon compte →</button>
+      <div class="auth-error" id="a-signup-error"></div>
+      <div class="auth-success" id="a-signup-success">✅ Compte créé ! Connectez-vous.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contact-modal" onclick="closeContactOnOverlay(event)">
+  <div class="contact-modal">
+    <div class="contact-modal-header">
+      <div class="contact-modal-title" id="cm-title">—</div>
+      <button class="modal-close" onclick="closeContactModal()">×</button>
+    </div>
+    <div class="contact-modal-body">
+      <div class="modal-price" id="cm-price">—</div>
+      <div class="modal-field"><div class="modal-label" id="cm-label-ville">Ville</div><div class="modal-value" id="cm-ville">—</div></div>
+      <div class="modal-field"><div class="modal-label" id="cm-label-duree">Durée</div><div class="modal-value" id="cm-duree">—</div></div>
+      <div class="modal-field"><div class="modal-label" id="cm-label-desc">Description</div><div class="modal-value" id="cm-desc">—</div></div>
+      <div class="contact-section">
+        <h4 id="cm-contact-title">💬 Contacter le propriétaire</h4>
+        <textarea id="cm-message" placeholder="Bonjour, je suis étudiant(e) en Erasmus et je suis intéressé(e) par votre logement..."></textarea>
+        <button class="send-btn" id="cm-send-btn" onclick="sendContactMessage()">Envoyer ma demande →</button>
+        <div class="send-success" id="cm-success">🎉 Demande envoyée ! Le propriétaire vous contactera par email.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://ufuftrmtrcukogyxnutv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdWZ0cm10cmN1a29neXhudXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTIyNjgsImV4cCI6MjA5NTgyODI2OH0.F1o6Nnhj5TosixVrRVJAY6ze_vvsmIFG5Jfr6hIQVIM'
+  );
+
+  let currentUser = null;
+  let currentRole = null; // 'etudiant' | 'proprietaire'
+  let pendingRole = 'etudiant';
+  let allLogements = [];
+  let filteredLogements = [];
+  let myBiens = [];
+  let favoris = [];
+  let currentLogement = null;
+  const EMOJIS = ['🏠','🛋️','🏡','🪴','🛏️','🏢'];
+
+  // ── SCREENS ──
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+  }
+
+  function goHome() {
+    doLogout();
+  }
+
+  // ── AUTH MODAL ──
+  function openAuth(role, tab) {
+    pendingRole = role;
+    document.getElementById('auth-modal-tag').textContent = role === 'etudiant' ? 'Espace Étudiant' : 'Espace Propriétaire';
+    document.getElementById('univ-field').style.display = role === 'etudiant' ? 'block' : 'none';
+    switchAuthTab(tab);
+    document.getElementById('auth-modal').classList.add('open');
+  }
+
+  function closeAuthModal() {
+    document.getElementById('auth-modal').classList.remove('open');
+  }
+
+  function switchAuthTab(tab) {
+    document.getElementById('aform-login').classList.toggle('active', tab === 'login');
+    document.getElementById('aform-signup').classList.toggle('active', tab === 'signup');
+    document.getElementById('atab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('atab-signup').classList.toggle('active', tab === 'signup');
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('a-login-email').value.trim();
+    const pwd = document.getElementById('a-login-pwd').value;
+    const errEl = document.getElementById('a-login-error');
+    errEl.style.display = 'none';
+    const btn = document.getElementById('a-login-btn');
+    btn.disabled = true; btn.textContent = '⏳...';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+    btn.disabled = false; btn.textContent = 'Se connecter →';
+    if (error) { errEl.style.display = 'block'; return; }
+    currentUser = { email: data.user.email, ...data.user.user_metadata };
+    currentRole = currentUser.role || pendingRole;
+    closeAuthModal();
+    enterDashboard();
+  }
+
+  async function doSignup() {
+    const prenom = document.getElementById('a-signup-prenom').value.trim();
+    const email = document.getElementById('a-signup-email').value.trim();
+    const pwd = document.getElementById('a-signup-pwd').value;
+    const univ = document.getElementById('a-signup-univ').value;
+    const errEl = document.getElementById('a-signup-error');
+    const sucEl = document.getElementById('a-signup-success');
+    errEl.style.display = 'none'; sucEl.style.display = 'none';
+    if (!prenom || !email || !pwd) { errEl.textContent = 'Remplis prénom, email et mot de passe.'; errEl.style.display = 'block'; return; }
+    if (pwd.length < 6) { errEl.textContent = 'Mot de passe trop court (min. 6 caractères).'; errEl.style.display = 'block'; return; }
+    const btn = document.getElementById('a-signup-btn');
+    btn.disabled = true; btn.textContent = '⏳...';
+    const meta = { prenom, role: pendingRole };
+    if (pendingRole === 'etudiant' && univ) meta.univ = univ;
+    const { error } = await sb.auth.signUp({ email, password: pwd, options: { data: meta } });
+    btn.disabled = false; btn.textContent = 'Créer mon compte →';
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+    sucEl.style.display = 'block';
+    setTimeout(() => switchAuthTab('login'), 2000);
+  }
+
+  function doLogout() {
+    sb.auth.signOut();
+    currentUser = null; currentRole = null;
+    allLogements = []; filteredLogements = []; myBiens = []; favoris = [];
+    showScreen('landing');
+  }
+
+  // ── ENTER DASHBOARD ──
+  function enterDashboard() {
+    if (currentRole === 'etudiant') {
+      document.getElementById('etu-name').textContent = currentUser.prenom || currentUser.email;
+      document.getElementById('etu-profile-prenom').textContent = currentUser.prenom || '—';
+      document.getElementById('etu-profile-email').textContent = currentUser.email;
+      document.getElementById('etu-profile-univ').textContent = currentUser.univ || '—';
+      loadFavoris();
+      loadLogements();
+      showScreen('etudiant');
+    } else {
+      document.getElementById('proprio-name').textContent = currentUser.prenom || currentUser.email;
+      document.getElementById('prop-profile-prenom').textContent = currentUser.prenom || '—';
+      document.getElementById('prop-profile-email').textContent = currentUser.email;
+      loadMyBiens();
+      showScreen('proprietaire');
+    }
+  }
+
+  // ── STUDENT TABS ──
+  function showEtuTab(tab, btn) {
+    document.querySelectorAll('#screen-etudiant .dash-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#screen-etudiant .dash-page').forEach(p => p.classList.remove('active'));
+    document.getElementById('epage-' + tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (tab === 'favoris') renderFavoris();
+  }
+
+  // ── OWNER TABS ──
+  function showPropTab(tab, btn) {
+    document.querySelectorAll('#screen-proprietaire .dash-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#screen-proprietaire .dash-page').forEach(p => p.classList.remove('active'));
+    document.getElementById('ppage-' + tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+  }
+
+  // ── LOGEMENTS ──
+  async function loadLogements() {
+    const { data, error } = await sb.from('logements').select('*').eq('statut', 'en_ligne').order('created_at', { ascending: false });
+    allLogements = error ? [] : (data || []);
+    filteredLogements = [...allLogements];
+    renderLogements();
+  }
+
+  function applyFilters() {
+    const ville = document.getElementById('f-ville').value;
+    const budget = parseInt(document.getElementById('f-budget').value) || 99999;
+    const sort = document.getElementById('f-sort').value;
+    filteredLogements = allLogements.filter(l => {
+      if (ville && l.ville !== ville) return false;
+      if (l.prix > budget) return false;
+      return true;
+    });
+    if (sort === 'asc') filteredLogements.sort((a,b) => (a.prix||0)-(b.prix||0));
+    else if (sort === 'desc') filteredLogements.sort((a,b) => (b.prix||0)-(a.prix||0));
+    translateAndRender();
+  }
+
+  function resetFilters() {
+    document.getElementById('f-ville').value = '';
+    document.getElementById('f-budget').value = '';
+    document.getElementById('f-sort').value = 'recent';
+    filteredLogements = [...allLogements];
+    translateAndRender();
+  }
+
+  function renderLogements() {
+    const grid = document.getElementById('logements-grid');
+    const count = filteredLogements.length;
+    const countLabel = currentLang === 'en' ? 
+      `<strong>${count}</strong> available room${count>1?'s':''}` :
+      currentLang === 'nl' ?
+      `<strong>${count}</strong> beschikbare kamer${count>1?'s':''}` :
+      `<strong>${count}</strong> logement${count>1?'s':''} disponible${count>1?'s':''}`;
+    document.getElementById('results-count').innerHTML = countLabel;
+    if (!count) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">Aucun logement trouvé</div><div class="empty-sub">Essaie d'élargir tes critères.</div></div>`;
+      return;
+    }
+    grid.innerHTML = filteredLogements.map((l,i) => {
+      const isFav = favoris.includes(l.id);
+      return `<div class="log-card">
+        <div class="log-photo">${EMOJIS[i%EMOJIS.length]}<div class="log-ville">📍 ${l.ville||'—'}</div></div>
+        <div class="log-body">
+          <div class="log-header"><div class="log-title">${l.titre||'Logement'}</div><div class="log-price">${l.prix||'—'}€</div></div>
+          <div class="log-detail">⏱ ${l.duree||'—'}</div>
+          <div class="log-desc">${l.description||'—'}</div>
+        </div>
+        <div class="log-footer">
+          <button class="contact-btn" onclick="openContactModal(${l.id})">Contacter →</button>
+          <button class="fav-btn" onclick="toggleFav(${l.id})">${isFav?'❤️':'🤍'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── CONTACT MODAL ──
+  function openContactModal(id) {
+    currentLogement = allLogements.find(l => l.id === id);
+    if (!currentLogement) return;
+    // Use translated version if available in filteredLogements
+    const translatedVersion = filteredLogements.find(l => l.id === id) || currentLogement;
+    const t = T[currentLang];
+    document.getElementById('cm-title').textContent = translatedVersion.titre || 'Logement';
+    document.getElementById('cm-price').textContent = (translatedVersion.prix||'—') + '€' + t.cm_price_suffix;
+    document.getElementById('cm-ville').textContent = translatedVersion.ville || '—';
+    document.getElementById('cm-duree').textContent = translatedVersion.duree || '—';
+    document.getElementById('cm-desc').textContent = translatedVersion.description || '—';
+    // Translate labels
+    document.getElementById('cm-label-ville').textContent = t.cm_ville;
+    document.getElementById('cm-label-duree').textContent = t.cm_duree;
+    document.getElementById('cm-label-desc').textContent = t.cm_desc;
+    document.getElementById('cm-contact-title').textContent = t.cm_contact;
+    document.getElementById('cm-send-btn').textContent = t.cm_send;
+    document.getElementById('cm-message').placeholder = t.cm_placeholder;
+    document.getElementById('cm-message').value = '';
+    document.getElementById('cm-success').style.display = 'none';
+    document.getElementById('contact-modal').classList.add('open');
+  }
+
+  function closeContactModal() { document.getElementById('contact-modal').classList.remove('open'); }
+  function closeContactOnOverlay(e) { if (e.target === document.getElementById('contact-modal')) closeContactModal(); }
+
+  function sendContactMessage() {
+    const msg = document.getElementById('cm-message').value.trim();
+    if (!msg) { alert('Écris un message avant d\'envoyer.'); return; }
+    document.getElementById('cm-success').style.display = 'block';
+    document.getElementById('cm-message').value = '';
+  }
+
+  // ── FAVORIS ──
+  function loadFavoris() {
+    const saved = localStorage.getItem('km_favs_' + currentUser.email);
+    favoris = saved ? JSON.parse(saved) : [];
+    updateFavCount();
+  }
+
+  function toggleFav(id) {
+    favoris = favoris.includes(id) ? favoris.filter(f=>f!==id) : [...favoris, id];
+    localStorage.setItem('km_favs_' + currentUser.email, JSON.stringify(favoris));
+    updateFavCount();
+    renderLogements();
+  }
+
+  function updateFavCount() {
+    document.getElementById('fav-count').textContent = favoris.length > 0 ? `(${favoris.length})` : '';
+  }
+
+  function renderFavoris() {
+    const favs = allLogements.filter(l => favoris.includes(l.id));
+    const c = document.getElementById('favoris-container');
+    if (!favs.length) { c.innerHTML = `<div class="empty-state"><div class="empty-icon">❤️</div><div class="empty-text">Aucun favori</div><div class="empty-sub">Sauvegarde les logements qui t'intéressent.</div></div>`; return; }
+    c.innerHTML = `<div class="favs-grid">${favs.map(l=>`<div class="fav-card"><div class="fav-title">${l.titre||'Logement'}</div><div class="fav-detail">📍 ${l.ville||'—'}</div><div class="fav-detail">⏱ ${l.duree||'—'}</div><div class="fav-price">${l.prix||'—'}€/mois</div><div style="display:flex;gap:8px;margin-top:10px"><button class="contact-btn" style="flex:1;padding:8px" onclick="openContactModal(${l.id})">Contacter →</button><button class="remove-fav" onclick="toggleFav(${l.id})">🗑</button></div></div>`).join('')}</div>`;
+  }
+
+  // ── MY BIENS ──
+  async function loadMyBiens() {
+    const { data, error } = await sb.from('logements').select('*').eq('proprio_email', currentUser.email).order('created_at', { ascending: false });
+    myBiens = error ? [] : (data || []);
+    renderMyBiens();
+  }
+
+  function renderMyBiens() {
+    const online = myBiens.filter(b=>b.statut==='en_ligne').length;
+    const pending = myBiens.filter(b=>b.statut==='en_attente').length;
+    const revenue = myBiens.filter(b=>b.statut==='en_ligne').reduce((s,b)=>s+(b.prix||0)*0.92,0);
+    document.getElementById('p-total').textContent = myBiens.length;
+    document.getElementById('p-online').textContent = online;
+    document.getElementById('p-pending').textContent = pending;
+    document.getElementById('p-revenue').textContent = Math.round(revenue)+'€';
+    const c = document.getElementById('biens-container');
+    if (!myBiens.length) {
+      c.innerHTML = `<div class="biens-grid"><div class="add-card" onclick="showPropTab('ajouter',document.getElementById('ptab-ajouter'))"><div style="font-size:2rem">➕</div><div>Ajouter votre premier logement</div></div></div>`;
+      return;
+    }
+    c.innerHTML = `<div class="biens-grid">${myBiens.map(b=>`<div class="bien-card"><div class="bien-header"><div class="bien-title">${b.titre||'Sans titre'}</div><span class="badge ${b.statut==='en_attente'?'badge-wait':b.statut==='en_ligne'?'badge-online':'badge-rented'}">${b.statut==='en_attente'?'⏳ En attente':b.statut==='en_ligne'?'✅ En ligne':'🔒 Loué'}</span></div><div class="bien-detail">📍 <strong>${b.ville||'—'}</strong></div><div class="bien-detail">💶 <strong>${b.prix?b.prix+'€/mois':'—'}</strong> · Net: <strong style="color:var(--green)">${b.prix?Math.round(b.prix*0.92)+'€':'—'}</strong></div><div class="bien-detail">⏱ ${b.duree||'—'}</div><button onclick="deleteBien(${b.id})" style="margin-top:12px;background:rgba(255,79,79,0.1);color:var(--red);border:none;padding:5px 11px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">🗑 Supprimer</button></div>`).join('')}<div class="add-card" onclick="showPropTab('ajouter',document.getElementById('ptab-ajouter'))"><div style="font-size:2rem">➕</div><div>Ajouter un bien</div></div></div>`;
+  }
+
+  let selectedPhotos = [];
+
+  function previewPhotos(event) {
+    const files = Array.from(event.target.files).slice(0, 5);
+    selectedPhotos = files;
+    const preview = document.getElementById('photo-previews');
+    preview.innerHTML = '';
+    files.forEach((file, i) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const div = document.createElement('div');
+        div.style.cssText = 'position:relative;width:80px;height:80px';
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)';
+        const btn = document.createElement('button');
+        btn.textContent = 'x';
+        btn.style.cssText = 'position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1';
+        const idx = i;
+        btn.onclick = () => removePhoto(idx);
+        div.appendChild(img);
+        div.appendChild(btn);
+        preview.appendChild(div);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removePhoto(index) {
+    selectedPhotos.splice(index, 1);
+    const dt = new DataTransfer();
+    selectedPhotos.forEach(f => dt.items.add(f));
+    document.getElementById('b-photos').files = dt.files;
+    previewPhotos({ target: { files: dt.files } });
+  }
+
+  async function uploadPhotos(logementId) {
+    if (!selectedPhotos.length) return [];
+    const urls = [];
+    for (const file of selectedPhotos) {
+      const ext = file.name.split('.').pop();
+      const path = logementId + '/' + Date.now() + '.' + ext;
+      const { data, error } = await sb.storage.from('photos').upload(path, file, { upsert: true });
+      if (!error) {
+        const { data: urlData } = sb.storage.from('photos').getPublicUrl(path);
+        urls.push(urlData.publicUrl);
+      }
+    }
+    return urls;
+  }
+
+  async function submitBien() {
+    const titre = document.getElementById('b-titre').value.trim();
+    const ville = document.getElementById('b-ville').value;
+    const prix = parseInt(document.getElementById('b-prix').value);
+    const dureeType = document.getElementById('b-duree-type').value;
+    const duree = dureeType === 'determinee' ? (document.getElementById('b-duree').value + ' mois') : 'Indéterminée';
+    const dispo = document.getElementById('b-dispo').value;
+    const type = document.getElementById('b-type').value;
+    const desc = document.getElementById('b-desc').value.trim();
+    if (!titre || !ville || !prix) { alert('Remplis titre, ville et prix.'); return; }
+    const btn = document.getElementById('submit-bien-btn');
+    btn.disabled = true; btn.textContent = '⏳ Envoi...';
+
+    const { data: logData, error } = await sb.from('logements').insert({
+      proprio_email: currentUser.email, titre, ville, prix,
+      duree: duree + (dispo ? ' · Dispo: ' + dispo : '') + ' · ' + type,
+      description: desc || '', statut: 'en_attente'
+    }).select().single();
+
+    if (error) { btn.disabled = false; btn.textContent = 'Soumettre →'; alert('Erreur : ' + error.message); return; }
+
+    if (selectedPhotos.length > 0) {
+      btn.textContent = '⏳ Upload photos...';
+      const photoUrls = await uploadPhotos(logData.id);
+      if (photoUrls.length > 0) {
+        await sb.from('logements').update({ photos: photoUrls.join(',') }).eq('id', logData.id);
+      }
+    }
+
+    btn.disabled = false; btn.textContent = 'Soumettre →';
+    document.getElementById('bien-success').style.display = 'block';
+    document.getElementById('b-titre').value = '';
+    document.getElementById('b-prix').value = '';
+    document.getElementById('b-desc').value = '';
+    document.getElementById('photo-previews').innerHTML = '';
+    selectedPhotos = [];
+    setTimeout(() => { document.getElementById('bien-success').style.display = 'none'; loadMyBiens(); showPropTab('biens', document.getElementById('ptab-biens')); }, 2500);
+  }
+
+    async function deleteBien(id) {
+    if (!confirm('Supprimer ce logement ?')) return;
+    await sb.from('logements').delete().eq('id',id);
+    loadMyBiens();
+  }
+
+  async function saveTel() {
+    const tel = document.getElementById('prop-tel-input').value.trim();
+    if (!tel) return;
+    await sb.auth.updateUser({ data: { tel } });
+    document.getElementById('tel-success').style.display='block';
+    setTimeout(()=>document.getElementById('tel-success').style.display='none',3000);
+  }
+
+  // ── SCROLL REVEAL ──
+  const observer = new IntersectionObserver(entries => { entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+
+  // ── TRANSLATIONS ──
+  const T = {
+    fr: {
+      nav_login: "Se connecter",
+      nav_signup: "S'inscrire",
+      badge: "✦ Plateforme belge · Erasmus · Belgique",
+      hero_h1: "Trouve ton <em>kot idéal</em><br/>en quelques clics.",
+      hero_p: "KotMatch connecte les étudiants Erasmus avec des propriétaires belges de confiance. Simple, rapide et sécurisé.",
+      hero_btn1: "🎓 Je cherche un kot",
+      hero_btn2: "🏠 Je propose un logement",
+      stat1: "Villes", stat2: "Vérifié", stat3: "Commission",
+      how_tag: "Comment ça marche",
+      how_title: "Simple comme bonjour.",
+      how_sub: "Trouver un logement pour ton Erasmus ne devrait pas être un calvaire.",
+      step1_title: "Crée ton profil", step1_p: "Dis-nous ta ville, tes dates et ton budget. 2 minutes chrono.",
+      step2_title: "Explore les kots", step2_p: "Parcours les logements disponibles avec filtres personnalisés.",
+      step3_title: "Contacte le proprio", step3_p: "Échange directement via la plateforme, en toute sécurité.",
+      step4_title: "Signe & installe-toi", step4_p: "Contrat sécurisé. Tu arrives en Belgique avec ton kot déjà prêt.",
+      aud_tag: "Pour qui ?",
+      aud_title: "Fait pour vous deux.",
+      aud_sub: "Étudiants ou propriétaires, KotMatch vous simplifie la vie.",
+      aud1_title: "Étudiants Erasmus",
+      aud1_p: "Tu arrives en Belgique et tu veux trouver un logement rapidement, sans galère et à prix raisonnable.",
+      aud1_btn: "Trouver un kot →",
+      aud2_title: "Propriétaires",
+      aud2_p: "Tu as une chambre libre et tu veux la louer à des étudiants sérieux, avec contrat et paiement sécurisé.",
+      aud2_btn: "Proposer mon bien →",
+      footer: "© 2025 KotMatch · Belgique · contact@kotmatch.be",
+      cm_ville: "Ville", cm_duree: "Durée", cm_desc: "Description",
+      cm_contact: "💬 Contacter le propriétaire",
+      cm_send: "Envoyer ma demande →",
+      cm_placeholder: "Bonjour, je suis étudiant(e) en Erasmus et je suis intéressé(e) par votre logement...",
+      cm_price_suffix: "/mois",
+      auth_login: "Se connecter", auth_signup: "Créer un compte",
+      auth_tag_etu: "Espace Étudiant", auth_tag_prop: "Espace Propriétaire",
+      search_tab: "🔍 Rechercher", favs_tab: "❤️ Favoris", profile_tab: "👤 Mon profil",
+      biens_tab: "🏠 Mes biens", add_tab: "➕ Ajouter", prop_profile_tab: "👤 Mon profil",
+    },
+    en: {
+      nav_login: "Log in",
+      nav_signup: "Sign up",
+      badge: "✦ Belgian platform · Erasmus · Belgium",
+      hero_h1: "Find your <em>perfect room</em><br/>in just a few clicks.",
+      hero_p: "KotMatch connects Erasmus students with trusted Belgian landlords. Simple, fast and secure.",
+      hero_btn1: "🎓 I'm looking for a room",
+      hero_btn2: "🏠 I have a room to offer",
+      stat1: "Cities", stat2: "Verified", stat3: "Commission",
+      how_tag: "How it works",
+      how_title: "As easy as it gets.",
+      how_sub: "Finding housing for your Erasmus shouldn't be a nightmare.",
+      step1_title: "Create your profile", step1_p: "Tell us your city, dates and budget. Takes 2 minutes.",
+      step2_title: "Browse rooms", step2_p: "Explore available listings with personalized filters.",
+      step3_title: "Contact the landlord", step3_p: "Chat directly via the platform, safely.",
+      step4_title: "Sign & move in", step4_p: "Secure contract. You arrive in Belgium with your room already sorted.",
+      aud_tag: "Who is it for?",
+      aud_title: "Built for both of you.",
+      aud_sub: "Students or landlords, KotMatch makes your life easier.",
+      aud1_title: "Erasmus Students",
+      aud1_p: "You're coming to Belgium and want to find housing quickly, without hassle and at a fair price.",
+      aud1_btn: "Find a room →",
+      aud2_title: "Landlords",
+      aud2_p: "You have a free room and want to rent it to serious students, with a secure contract and payment.",
+      aud2_btn: "List my property →",
+      footer: "© 2025 KotMatch · Belgium · contact@kotmatch.be",
+      cm_ville: "City", cm_duree: "Duration", cm_desc: "Description",
+      cm_contact: "💬 Contact the landlord",
+      cm_send: "Send my request →",
+      cm_placeholder: "Hello, I am an Erasmus student and I am interested in your listing...",
+      cm_price_suffix: "/month",
+      auth_login: "Log in", auth_signup: "Create account",
+      auth_tag_etu: "Student Space", auth_tag_prop: "Landlord Space",
+      search_tab: "🔍 Search", favs_tab: "❤️ Favorites", profile_tab: "👤 My profile",
+      biens_tab: "🏠 My properties", add_tab: "➕ Add", prop_profile_tab: "👤 My profile",
+    },
+    nl: {
+      nav_login: "Inloggen",
+      nav_signup: "Inschrijven",
+      badge: "✦ Belgisch platform · Erasmus · België",
+      hero_h1: "Vind jouw <em>ideale kamer</em><br/>in een paar klikken.",
+      hero_p: "KotMatch verbindt Erasmusstudenten met betrouwbare Belgische verhuurders. Eenvoudig, snel en veilig.",
+      hero_btn1: "🎓 Ik zoek een kamer",
+      hero_btn2: "🏠 Ik bied een kamer aan",
+      stat1: "Steden", stat2: "Geverifieerd", stat3: "Commissie",
+      how_tag: "Hoe werkt het?",
+      how_title: "Zo eenvoudig als het is.",
+      how_sub: "Een woning vinden voor je Erasmus hoeft geen nachtmerrie te zijn.",
+      step1_title: "Maak je profiel", step1_p: "Vertel ons je stad, data en budget. Slechts 2 minuten.",
+      step2_title: "Ontdek kamers", step2_p: "Bekijk beschikbare woningen met gepersonaliseerde filters.",
+      step3_title: "Contacteer verhuurder", step3_p: "Chat rechtstreeks via het platform, veilig en eenvoudig.",
+      step4_title: "Teken & trek in", step4_p: "Veilig contract. Je komt aan in België met je kamer al geregeld.",
+      aud_tag: "Voor wie?",
+      aud_title: "Gemaakt voor jullie beiden.",
+      aud_sub: "Studenten of verhuurders, KotMatch maakt jouw leven makkelijker.",
+      aud1_title: "Erasmusstudenten",
+      aud1_p: "Je komt naar België en wil snel een woning vinden, zonder gedoe en tegen een eerlijke prijs.",
+      aud1_btn: "Een kamer vinden →",
+      aud2_title: "Verhuurders",
+      aud2_p: "Je hebt een vrije kamer en wil die verhuren aan serieuze studenten, met veilig contract en betaling.",
+      aud2_btn: "Mijn woning aanbieden →",
+      footer: "© 2025 KotMatch · België · contact@kotmatch.be",
+      cm_ville: "Stad", cm_duree: "Duur", cm_desc: "Beschrijving",
+      cm_contact: "💬 Verhuurder contacteren",
+      cm_send: "Mijn aanvraag versturen →",
+      cm_placeholder: "Hallo, ik ben een Erasmusstudent en ik ben geïnteresseerd in uw woning...",
+      cm_price_suffix: "/maand",
+      auth_login: "Inloggen", auth_signup: "Account aanmaken",
+      auth_tag_etu: "Studentenruimte", auth_tag_prop: "Verhuurderruimte",
+      search_tab: "🔍 Zoeken", favs_tab: "❤️ Favorieten", profile_tab: "👤 Mijn profiel",
+      biens_tab: "🏠 Mijn woningen", add_tab: "➕ Toevoegen", prop_profile_tab: "👤 Mijn profiel",
+    }
+  };
+
+  let currentLang = 'fr';
+
+  function setLang(lang) {
+    currentLang = lang;
+    // Update all lang buttons across all screens
+    ['lb-','lb2-','lb3-'].forEach(prefix => {
+      ['fr','en','nl'].forEach(l => {
+        const el = document.getElementById(prefix+l);
+        if (el) el.classList.toggle('active', l === lang);
+      });
+    });
+    const t = T[lang];
+
+    // Nav
+    document.getElementById('nav-login-btn').textContent = t.nav_login;
+    document.getElementById('nav-signup-btn').textContent = t.nav_signup;
+
+    // Hero
+    const badge = document.querySelector('.hero-badge');
+    if (badge) badge.textContent = t.badge;
+    const h1 = document.querySelector('.hero h1');
+    if (h1) h1.innerHTML = t.hero_h1;
+    const heroPara = document.querySelector('.hero p');
+    if (heroPara) heroPara.textContent = t.hero_p;
+    const heroBtns = document.querySelectorAll('.hero-btns button');
+    if (heroBtns[0]) heroBtns[0].textContent = t.hero_btn1;
+    if (heroBtns[1]) heroBtns[1].textContent = t.hero_btn2;
+    const statLabels = document.querySelectorAll('.stat-label');
+    if (statLabels[0]) statLabels[0].textContent = t.stat1;
+    if (statLabels[1]) statLabels[1].textContent = t.stat2;
+    if (statLabels[2]) statLabels[2].textContent = t.stat3;
+
+    // How it works
+    const sectionTags = document.querySelectorAll('.section-tag');
+    const sectionTitles = document.querySelectorAll('.section-title');
+    const sectionSubs = document.querySelectorAll('.section-sub');
+    if (sectionTags[0]) sectionTags[0].textContent = t.how_tag;
+    if (sectionTitles[0]) sectionTitles[0].textContent = t.how_title;
+    if (sectionSubs[0]) sectionSubs[0].textContent = t.how_sub;
+    const howCards = document.querySelectorAll('.how-card');
+    if (howCards[0]) { howCards[0].querySelector('h3').textContent = t.step1_title; howCards[0].querySelector('p').textContent = t.step1_p; }
+    if (howCards[1]) { howCards[1].querySelector('h3').textContent = t.step2_title; howCards[1].querySelector('p').textContent = t.step2_p; }
+    if (howCards[2]) { howCards[2].querySelector('h3').textContent = t.step3_title; howCards[2].querySelector('p').textContent = t.step3_p; }
+    if (howCards[3]) { howCards[3].querySelector('h3').textContent = t.step4_title; howCards[3].querySelector('p').textContent = t.step4_p; }
+
+    // Audience
+    if (sectionTags[1]) sectionTags[1].textContent = t.aud_tag;
+    if (sectionTitles[1]) sectionTitles[1].textContent = t.aud_title;
+    if (sectionSubs[1]) sectionSubs[1].textContent = t.aud_sub;
+    const audCards = document.querySelectorAll('.audience-card');
+    if (audCards[0]) {
+      audCards[0].querySelector('h3').textContent = t.aud1_title;
+      audCards[0].querySelector('p').textContent = t.aud1_p;
+      audCards[0].querySelector('button').textContent = t.aud1_btn;
+    }
+    if (audCards[1]) {
+      audCards[1].querySelector('h3').textContent = t.aud2_title;
+      audCards[1].querySelector('p').textContent = t.aud2_p;
+      audCards[1].querySelector('button').textContent = t.aud2_btn;
+    }
+
+    // Footer
+    const footerP = document.querySelector('footer p');
+    if (footerP) footerP.textContent = t.footer;
+
+    // Auth modal
+    document.getElementById('atab-login').textContent = t.auth_login;
+    document.getElementById('atab-signup').textContent = t.auth_signup;
+
+    // Student dashboard tabs
+    const etabSearch = document.getElementById('etab-search');
+    const etabFavoris = document.getElementById('etab-favoris');
+    const etabProfil = document.getElementById('etab-profil');
+    if (etabSearch) etabSearch.textContent = t.search_tab;
+    if (etabFavoris) etabFavoris.innerHTML = t.favs_tab + ' <span id="fav-count"></span>';
+    if (etabProfil) etabProfil.textContent = t.profile_tab;
+
+    // Owner dashboard tabs
+    const ptabBiens = document.getElementById('ptab-biens');
+    const ptabAjouter = document.getElementById('ptab-ajouter');
+    const ptabProfil = document.getElementById('ptab-profil');
+    if (ptabBiens) ptabBiens.textContent = t.biens_tab;
+    if (ptabAjouter) ptabAjouter.textContent = t.add_tab;
+    if (ptabProfil) ptabProfil.textContent = t.prop_profile_tab;
+
+    // Logout buttons
+    const logoutEtu = document.getElementById('logout-btn-etu');
+    const logoutProp = document.getElementById('logout-btn-prop');
+    const logoutLabel = lang === 'fr' ? 'Déconnexion' : lang === 'en' ? 'Log out' : 'Uitloggen';
+    if (logoutEtu) logoutEtu.textContent = logoutLabel;
+    if (logoutProp) logoutProp.textContent = logoutLabel;
+
+    // Search filters placeholders
+    const filterVille = document.getElementById('f-ville');
+    const filterSort = document.getElementById('f-sort');
+    if (filterVille) {
+      filterVille.options[0].text = lang === 'fr' ? 'Toutes les villes' : lang === 'en' ? 'All cities' : 'Alle steden';
+    }
+    if (filterSort) {
+      filterSort.options[0].text = lang === 'fr' ? 'Plus récent' : lang === 'en' ? 'Most recent' : 'Meest recent';
+      filterSort.options[1].text = lang === 'fr' ? 'Prix ↑' : lang === 'en' ? 'Price ↑' : 'Prijs ↑';
+      filterSort.options[2].text = lang === 'fr' ? 'Prix ↓' : lang === 'en' ? 'Price ↓' : 'Prijs ↓';
+    }
+
+    // Translate and re-render logements
+    if (document.getElementById('screen-etudiant').classList.contains('active')) {
+      filteredLogements = [...allLogements];
+      translateAndRender();
+    }
+  }
+
+
+  // ── PREMIUM ──
+  function openPremiumModal() {
+    document.getElementById('premium-modal').classList.add('open');
+  }
+  function closePremiumModal() {
+    document.getElementById('premium-modal').classList.remove('open');
+  }
+  function closePremiumOnOverlay(e) {
+    if (e.target === document.getElementById('premium-modal')) closePremiumModal();
+  }
+  function subscribePremium() {
+    // Will be connected to Stripe when ready
+    alert('Le paiement Stripe sera configuré très bientôt ! En attendant, contactez-nous à contact@kotmatch.be pour activer votre Premium.');
+    closePremiumModal();
+  }
+
+
+  // ── ROLE SELECTION ──
+  let pendingAuthTab = 'login';
+
+  function openRoleSelect(tab) {
+    pendingAuthTab = tab;
+    const t = T[currentLang];
+    document.getElementById('role-modal-tag').textContent = tab === 'login' ? 
+      (currentLang === 'fr' ? 'Qui êtes-vous ?' : currentLang === 'en' ? 'Who are you?' : 'Wie bent u?') :
+      (currentLang === 'fr' ? 'Créer un compte' : currentLang === 'en' ? 'Create an account' : 'Account aanmaken');
+    document.getElementById('role-modal').classList.add('open');
+  }
+
+  function closeRoleModal() {
+    document.getElementById('role-modal').classList.remove('open');
+  }
+
+  function closeRoleOnOverlay(e) {
+    if (e.target === document.getElementById('role-modal')) closeRoleModal();
+  }
+
+  function selectRole(role) {
+    closeRoleModal();
+    openAuth(role, pendingAuthTab);
+  }
+
+  // ── THEME TOGGLE ──
+  let isDark = true;
+  function toggleTheme() {
+    isDark = !isDark;
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    const icon = isDark ? '🌙' : '☀️';
+    ['theme-btn','theme-btn-etu','theme-btn-prop'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = icon;
+    });
+  }
+
+  // ── SESSION CHECK ──
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      currentUser = { email: session.user.email, ...session.user.user_metadata };
+      currentRole = currentUser.role || 'etudiant';
+      enterDashboard();
+    }
+  });
+</script>
+</body>
+</html>
