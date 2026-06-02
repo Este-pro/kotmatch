@@ -810,6 +810,43 @@
   </div>
 </div>
 
+<!-- BIEN DETAIL MODAL -->
+<div class="modal-overlay" id="bien-detail-modal" onclick="closeBienDetailOnOverlay(event)">
+  <div class="contact-modal" style="max-width:560px">
+    <div class="contact-modal-header">
+      <div class="contact-modal-title" id="bd-title">Mon annonce</div>
+      <button class="modal-close" onclick="closeBienDetailModal()">×</button>
+    </div>
+    <div class="contact-modal-body">
+      <div id="bd-photos" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <div class="modal-field"><div class="modal-label">Statut</div><div class="modal-value" id="bd-statut">—</div></div>
+      <div class="modal-field"><div class="modal-label">Ville</div><div class="modal-value" id="bd-ville">—</div></div>
+      <div class="modal-field"><div class="modal-label">Prix</div><div class="modal-value" id="bd-prix">—</div></div>
+      <div class="modal-field"><div class="modal-label">Durée</div><div class="modal-value" id="bd-duree">—</div></div>
+      <div class="modal-field"><div class="modal-label">Description</div><div class="modal-value" id="bd-desc">—</div></div>
+      
+      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+        <div style="font-family:Inter,sans-serif;font-weight:600;font-size:0.9rem;margin-bottom:12px">Modifier mon annonce</div>
+        <div class="form-group"><label>Titre</label><input type="text" id="edit-titre" style="width:100%;background:#1a1e28;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:Inter,sans-serif;font-size:0.875rem;outline:none"/></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>Prix (€/mois)</label><input type="number" id="edit-prix" style="width:100%;background:#1a1e28;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:Inter,sans-serif;font-size:0.875rem;outline:none"/></div>
+          <div class="form-group"><label>Ville</label>
+            <select id="edit-ville" style="width:100%;background:#1a1e28;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:Inter,sans-serif;font-size:0.875rem;outline:none;-webkit-appearance:none">
+              <option>Bruxelles</option><option>Gand</option><option>Louvain</option><option>Liège</option><option>Anvers</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Description</label><textarea id="edit-desc" style="width:100%;background:#1a1e28;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:Inter,sans-serif;font-size:0.875rem;outline:none;resize:vertical;min-height:80px"></textarea></div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button onclick="closeBienDetailModal()" style="flex:1;background:transparent;color:var(--muted);border:1px solid var(--border);padding:10px;border-radius:7px;font-weight:500;font-size:0.875rem;cursor:pointer;font-family:Inter,sans-serif">Annuler</button>
+          <button id="save-edit-btn" onclick="saveBienEdit()" style="flex:2;background:var(--accent);color:#fff;border:none;padding:10px;border-radius:7px;font-weight:600;font-size:0.875rem;cursor:pointer;font-family:Inter,sans-serif">Sauvegarder →</button>
+        </div>
+        <div id="edit-success" style="display:none;color:var(--green);font-size:0.82rem;text-align:center;margin-top:8px">✅ Modifications sauvegardées !</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   const { createClient } = supabase;
   const SUPABASE_URL = 'https://ufuftrmtrcukogyxnutv.supabase.co';
@@ -1165,20 +1202,29 @@
     const btn = document.getElementById('submit-bien-btn');
     btn.disabled = true; btn.textContent = '⏳ Envoi...';
 
-    const { data: logData, error } = await sb.from('logements').insert({
+    // Convert photos to base64 first
+    let photosData = null;
+    if (selectedPhotos.length > 0) {
+      btn.textContent = '⏳ Photos...';
+      const base64s = [];
+      for (const file of selectedPhotos) {
+        const b64 = await compressImage(file, 600, 0.6);
+        base64s.push(b64);
+      }
+      photosData = base64s.join('|||');
+    }
+
+    const { error } = await sb.from('logements').insert({
       proprio_email: currentUser.email, titre, ville, prix,
       duree: duree + (dispo ? ' · Dispo: ' + dispo : '') + ' · ' + type,
-      description: desc || '', statut: 'en_attente'
-    }).select().single();
+      description: desc || '',
+      photos: photosData,
+      statut: 'en_attente'
+    });
 
     if (error) { btn.disabled = false; btn.textContent = 'Soumettre →'; alert('Erreur : ' + error.message); return; }
 
-    if (selectedPhotos.length > 0) {
-      btn.textContent = '⏳ Traitement photos...';
-      const photoBase64s = await uploadPhotos(logData.id);
-      if (photoBase64s.length > 0) {
-        await sb.from('logements').update({ photos: photoBase64s.join('|||') }).eq('id', logData.id);
-      }
+    if (false) { // placeholder
     }
 
     btn.disabled = false; btn.textContent = 'Soumettre →';
@@ -1191,7 +1237,63 @@
     setTimeout(() => { document.getElementById('bien-success').style.display = 'none'; loadMyBiens(); showPropTab('biens', document.getElementById('ptab-biens')); }, 2500);
   }
 
-    async function deleteBien(id) {
+    // ── BIEN DETAIL ──
+  let currentBienId = null;
+
+  function openBienDetail(id) {
+    const b = myBiens.find(x => x.id === id);
+    if (!b) return;
+    currentBienId = id;
+    document.getElementById('bd-title').textContent = b.titre || 'Mon annonce';
+    document.getElementById('bd-statut').textContent = b.statut === 'en_attente' ? '⏳ En attente de validation' : b.statut === 'en_ligne' ? '✅ En ligne' : '🔒 Loué';
+    document.getElementById('bd-ville').textContent = b.ville || '—';
+    document.getElementById('bd-prix').textContent = b.prix ? b.prix + '€/mois · Net: ' + Math.round(b.prix * 0.92) + '€' : '—';
+    document.getElementById('bd-duree').textContent = b.duree || '—';
+    document.getElementById('bd-desc').textContent = b.description || '—';
+    // Photos
+    const photosDiv = document.getElementById('bd-photos');
+    photosDiv.innerHTML = '';
+    if (b.photos) {
+      b.photos.split('|||').forEach(src => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.cssText = 'width:100px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)';
+        photosDiv.appendChild(img);
+      });
+    }
+    // Pre-fill edit form
+    document.getElementById('edit-titre').value = b.titre || '';
+    document.getElementById('edit-prix').value = b.prix || '';
+    document.getElementById('edit-ville').value = b.ville || 'Bruxelles';
+    document.getElementById('edit-desc').value = b.description || '';
+    document.getElementById('edit-success').style.display = 'none';
+    document.getElementById('bien-detail-modal').classList.add('open');
+  }
+
+  function closeBienDetailModal() {
+    document.getElementById('bien-detail-modal').classList.remove('open');
+  }
+
+  function closeBienDetailOnOverlay(e) {
+    if (e.target === document.getElementById('bien-detail-modal')) closeBienDetailModal();
+  }
+
+  async function saveBienEdit() {
+    const titre = document.getElementById('edit-titre').value.trim();
+    const prix = parseInt(document.getElementById('edit-prix').value);
+    const ville = document.getElementById('edit-ville').value;
+    const desc = document.getElementById('edit-desc').value.trim();
+    if (!titre || !prix) { alert('Remplis le titre et le prix.'); return; }
+    const btn = document.getElementById('save-edit-btn');
+    btn.disabled = true; btn.textContent = '⏳...';
+    const { error } = await sb.from('logements').update({ titre, prix, ville, description: desc }).eq('id', currentBienId);
+    btn.disabled = false; btn.textContent = 'Sauvegarder →';
+    if (error) { alert('Erreur : ' + error.message); return; }
+    document.getElementById('edit-success').style.display = 'block';
+    await loadMyBiens();
+  }
+
+  async function deleteBien(id) {
     if (!confirm('Supprimer ce logement ?')) return;
     await sb.from('logements').delete().eq('id',id);
     loadMyBiens();
