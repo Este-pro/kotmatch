@@ -1118,26 +1118,38 @@
 
   async function uploadPhotos(logementId) {
     if (!selectedPhotos.length) return [];
-    const urls = [];
+    const base64s = [];
     for (const file of selectedPhotos) {
-      const ext = file.name.split('.').pop().toLowerCase();
-      const path = 'logement-' + logementId + '-' + Date.now() + '.' + ext;
-      console.log('Uploading:', path, 'Size:', file.size);
-      const { data, error } = await sbAdmin.storage.from('photos').upload(path, file, { 
-        upsert: true,
-        contentType: file.type
-      });
-      if (error) {
-        console.error('Upload error:', JSON.stringify(error));
-        alert('Erreur upload photo: ' + (error.message || JSON.stringify(error)));
-      } else {
-        console.log('Upload success:', data);
-        const { data: urlData } = sbAdmin.storage.from('photos').getPublicUrl(path);
-        console.log('Public URL:', urlData.publicUrl);
-        urls.push(urlData.publicUrl);
-      }
+      // Resize and compress image before storing
+      const base64 = await compressImage(file, 800, 0.7);
+      base64s.push(base64);
     }
-    return urls;
+    return base64s;
+  }
+
+  function compressImage(file, maxWidth, quality) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   async function submitBien() {
@@ -1162,10 +1174,10 @@
     if (error) { btn.disabled = false; btn.textContent = 'Soumettre →'; alert('Erreur : ' + error.message); return; }
 
     if (selectedPhotos.length > 0) {
-      btn.textContent = '⏳ Upload photos...';
-      const photoUrls = await uploadPhotos(logData.id);
-      if (photoUrls.length > 0) {
-        await sb.from('logements').update({ photos: photoUrls.join(',') }).eq('id', logData.id);
+      btn.textContent = '⏳ Traitement photos...';
+      const photoBase64s = await uploadPhotos(logData.id);
+      if (photoBase64s.length > 0) {
+        await sb.from('logements').update({ photos: photoBase64s.join('|||') }).eq('id', logData.id);
       }
     }
 
